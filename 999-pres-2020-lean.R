@@ -15,8 +15,8 @@ pres_results_2020 <- pres_results_2020[[32]] %>% html_table(fill = TRUE)
 
 # RENAME COLUMNS
 pres_results_2020 <- pres_results_2020 %>% setNames(c('state', 'Biden_DEM_vote', 'Biden_DEM_share', 'Biden_DEM_EV', 'Trump_REP_vote', 'Trump_REP_share', 'Trump_REP_EV', 'Jorgensen_LIB_vote', 'Jorgensen_LIB_share',
-                          'Jorgensen_LIB_EV', 'Hawkins_GRN_vote', 'Hawkins_GRN_share', 'Hawkins_GRN_EV', 'Other_vote', 'Other_share', 'Other_EV', 'Margin_vote', 'Margin_share', 'total_votes', 
-                          'sources'))
+                                                      'Jorgensen_LIB_EV', 'Hawkins_GRN_vote', 'Hawkins_GRN_share', 'Hawkins_GRN_EV', 'Other_vote', 'Other_share', 'Other_EV', 'Margin_vote', 'Margin_share', 'total_votes', 
+                                                      'sources'))
 
 # OMIT ROW 1 - DUPLICATE OF HEADER
 pres_results_2020 <- pres_results_2020[c(-1, -58, -59),]
@@ -55,7 +55,7 @@ pres_results_2020$state[pres_results_2020$state == 'D.C.'] <- 'District of Colum
 pres_results_2020$state[pres_results_2020$state == 'Fla.'] <- 'Florida'
 pres_results_2020$state[pres_results_2020$state == 'Ga.'] <- 'Georgia'
 pres_results_2020$state[pres_results_2020$state == 'Ill.'] <- 'Illinois'
-pres_results_2020$state[pres_results_2020$state == 'In.'] <- 'Indiana'
+pres_results_2020$state[pres_results_2020$state == 'Ind.'] <- 'Indiana'
 pres_results_2020$state[pres_results_2020$state == 'Kan.'] <- 'Kansas'
 pres_results_2020$state[pres_results_2020$state == 'Ky.'] <- 'Kentucky'
 pres_results_2020$state[pres_results_2020$state == 'La.'] <- 'Louisiana'
@@ -95,8 +95,45 @@ pres_results_2020$state[pres_results_2020$state == 'W.Va.'] <- 'West Virginia'
 pres_results_2020$state[pres_results_2020$state == 'Wis.'] <- 'Wisconsin'
 pres_results_2020$state[pres_results_2020$state == 'Wyo.'] <- 'Wyoming'
 
-pres_results_2020$state
+pres_results_2020 <- pres_results_2020 %>%
+  select(state, Biden_DEM_vote, Biden_DEM_share, Trump_REP_vote, Trump_REP_share, Margin_vote_DvR, Margin_share_DvR)
 
-save(pres_results_2020, file = 'rda/pres_results_2020.rda')
+pres_results_2020$state[pres_results_2020$state %in% c('Nebraska', 'Nebraska CD-1', 'Nebraska CD-2', 'Nebraska CD-3')] <- 'Nebraska'
+pres_results_2020$state[pres_results_2020$state %in% c('Maine', 'Maine CD-1', 'Maine CD-2')] <- 'Maine'
+
+Nebraska <- pres_results_2020 %>%
+  filter(state == 'Nebraska') %>%
+  group_by(state) %>%
+  summarize(Biden_DEM_vote = sum(Biden_DEM_vote),
+            Trump_REP_vote = sum(Trump_REP_vote),
+            Margin_vote_DvR = Trump_REP_vote - Biden_DEM_vote,
+            Biden_DEM_share = Biden_DEM_vote / (Biden_DEM_vote + Trump_REP_vote),
+            Trump_REP_share = Trump_REP_vote / (Biden_DEM_vote + Trump_REP_vote),
+            Margin_share_DvR = Trump_REP_share - Biden_DEM_share) %>%
+  select(state, Biden_DEM_vote, Biden_DEM_share, Trump_REP_vote, Trump_REP_share, Margin_vote_DvR, Margin_share_DvR)
+
+Maine <- pres_results_2020 %>%
+  filter(state == 'Maine') %>%
+  group_by(state) %>%
+  summarize(Biden_DEM_vote = sum(Biden_DEM_vote),
+            Trump_REP_vote = sum(Trump_REP_vote),
+            Margin_vote_DvR = Trump_REP_vote - Biden_DEM_vote,
+            Biden_DEM_share = Biden_DEM_vote / (Biden_DEM_vote + Trump_REP_vote),
+            Trump_REP_share = Trump_REP_vote / (Biden_DEM_vote + Trump_REP_vote),
+            Margin_share_DvR = Trump_REP_share - Biden_DEM_share) %>%
+  select(state, Biden_DEM_vote, Biden_DEM_share, Trump_REP_vote, Trump_REP_share, Margin_vote_DvR, Margin_share_DvR)
+
+pres_results_2020 <- pres_results_2020 %>%
+  filter(!state %in% c('Nebraska', 'Maine')) %>%
+  mutate(Biden_DEM_share = Biden_DEM_share / 100,
+         Trump_REP_share = Trump_REP_share / 100) %>%
+  rbind(Nebraska, Maine) %>%
+  rename(state_name = state,
+         lean_2020 = Margin_share_DvR) %>%
+  arrange(state_name)
+
+head(pres_results_2020)
+
+save(pres_results_2020, file = 'rda/pres_results_2020_filered.rda')
 
 

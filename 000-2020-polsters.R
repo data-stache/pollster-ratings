@@ -30,4 +30,6 @@ pres_polls_2020 <- pres_polls_2020 %>%
 # EMPTY STATES CONVERTEN TO NATIONAL
 pres_polls_2020$state[pres_polls_2020$state == ''] <- 'National'
 
+head(pres_polls_2020)
+
 save(pres_polls_2020, file = 'rda/pres_polls_2020.rda')
